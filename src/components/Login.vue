@@ -61,7 +61,11 @@
           </button>
         </form>
 
-        <p class="hint-text">测试账号：admin/admin123 · teacher101/teacher123 · student1001/student123</p>
+        <p class="hint-text">
+          测试账号：admin/admin123 · s1/s123 · t1/t123 | 
+          老师：t101/t101 · t102/t102 · t103/t103 | 
+          学生：s1001/s1001 · s1002/s1002 · s1003/s1003
+        </p>
       </div>
     </div>
   </div>

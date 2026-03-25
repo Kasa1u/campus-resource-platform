@@ -2,33 +2,51 @@
   <div class="page-container">
     <h2>资源浏览</h2>
     
-    <div class="tab-section">
-      <button 
-        v-for="tab in tabs" 
-        :key="tab.value"
-        :class="['tab-btn', activeTab === tab.value ? 'active' : '']"
-        @click="activeTab = tab.value"
-      >
-        {{ tab.label }}
-      </button>
+    <!-- 分类卡片入口 -->
+    <div v-if="!showResourceList" class="category-entrance">
+      <div class="category-card" @click="enterCategory('online')">
+        <div class="category-icon">🌐</div>
+        <h3>网络课程</h3>
+        <p>精选优质在线课程资源</p>
+        <div class="category-count">{{ getCount('online') }} 个资源</div>
+      </div>
+      <div class="category-card" @click="enterCategory('campus')">
+        <div class="category-icon">🏫</div>
+        <h3>校内课程</h3>
+        <p>本校教师上传的课程资源</p>
+        <div class="category-count">{{ getCount('campus') }} 个资源</div>
+      </div>
+      <div class="category-card" @click="enterCategory('books')">
+        <div class="category-icon">📚</div>
+        <h3>书籍资源</h3>
+        <p>电子书、文档等学习资料</p>
+        <div class="category-count">{{ getCount('books') }} 个资源</div>
+      </div>
     </div>
     
-    <div class="filter-section">
-      <div class="search-box">
-        <input v-model="searchText" :placeholder="getPlaceholder()" class="search-input" />
+    <!-- 资源列表页面 -->
+    <div v-else class="resource-list-page">
+      <div class="page-header">
+        <button @click="backToCategories" class="btn-back">← 返回分类</button>
+        <h3>{{ getCategoryTitle() }}</h3>
       </div>
-      <div class="filter-box">
-        <select v-model="filterType" class="filter-select">
-          <option value="">全部类型</option>
-          <option v-for="t in filteredTypes" :key="t.id" :value="t.id">{{ t.name }}</option>
-        </select>
-        <select v-model="sortBy" class="filter-select">
-          <option value="downloads">下载最多</option>
-          <option value="points">积分最低</option>
-          <option value="newest">最新上传</option>
-        </select>
+      
+      <div class="filter-section">
+        <div class="search-box">
+          <input v-model="searchText" :placeholder="getPlaceholder()" class="search-input" />
+        </div>
+        <div class="filter-box">
+          <select v-model="filterType" class="filter-select">
+            <option value="">全部类型</option>
+            <option v-for="t in filteredTypes" :key="t.id" :value="t.id">{{ t.name }}</option>
+          </select>
+          <select v-model="sortBy" class="filter-select">
+            <option value="downloads">下载最多</option>
+            <option value="points">积分最低</option>
+            <option value="newest">最新上传</option>
+          </select>
+        </div>
       </div>
-    </div>
 
     <div class="course-grid">
       <div v-for="course in filteredCourses" :key="course.id" class="course-card">
@@ -39,7 +57,7 @@
         <h3 class="course-title">{{ course.title }}</h3>
         <p class="course-description">{{ course.description }}</p>
         <div class="course-meta">
-          <span>👨‍🏫 {{ course.teacher?.name || course.teacher?.username }}</span>
+          <span>👨‍🏫 {{ course.uploader?.name || course.uploader?.username || '未知' }}</span>
           <span>📥 {{ course.downloads }} 次下载</span>
         </div>
         <div class="course-actions">
@@ -50,10 +68,11 @@
           <button @click="downloadCourse(course)" class="btn-download">下载</button>
         </div>
       </div>
+      
+      <div v-if="filteredCourses.length === 0" class="empty-state">
+        <p>暂无课程数据</p>
+      </div>
     </div>
-
-    <div v-if="filteredCourses.length === 0" class="empty-state">
-      <p>暂无课程数据</p>
     </div>
   </div>
 </template>
@@ -64,30 +83,23 @@ import axios from 'axios'
 
 const courses = ref<any[]>([])
 const courseTypes = ref<any[]>([])
-const collections = ref<any[]>([])
 const searchText = ref('')
 const filterType = ref('')
 const sortBy = ref('downloads')
-const activeTab = ref('online')
-
-const tabs = [
-  { label: '网络课程', value: 'online' },
-  { label: '校内课程', value: 'campus' },
-  { label: '书籍资源', value: 'books' }
-]
+const currentCategory = ref('')
+const showResourceList = ref(false)
+const collections = ref<any[]>([])
 
 const filteredTypes = computed(() => {
-  if (activeTab.value === 'online') {
-    // 网络课程类型：MOOC、哔哩哔哩
-    return courseTypes.value.filter(type => type.name === 'MOOC' || type.name === '哔哩哔哩')
-  } else if (activeTab.value === 'campus') {
-    // 校内课程类型：人文类、海洋类、历史类、政治类
-    return courseTypes.value.filter(type => 
-      type.name === '人文类' || type.name === '海洋类' || type.name === '历史类' || type.name === '政治类'
-    )
-  } else if (activeTab.value === 'books') {
-    // 书籍资源类型：二手书、电子书
-    return courseTypes.value.filter(type => type.name === '二手书' || type.name === '电子书')
+  if (currentCategory.value === 'online') {
+    // 网络课程类型：视频、MOOC 等
+    return courseTypes.value.filter(type => type.name === '视频' || type.name === 'MOOC')
+  } else if (currentCategory.value === 'campus') {
+    // 校内课程类型：课件、作业等
+    return courseTypes.value.filter(type => type.name === '课件' || type.name === '作业')
+  } else if (currentCategory.value === 'books') {
+    // 书籍资源类型：文档、电子书等
+    return courseTypes.value.filter(type => type.name === '文档' || type.name === '电子书')
   }
   return courseTypes.value
 })
@@ -100,17 +112,15 @@ const filteredCourses = computed(() => {
     
     // 根据标签页过滤
     let matchesTab = true
-    if (activeTab.value === 'online') {
-      // 网络课程：过滤出MOOC和哔哩哔哩类型
-      matchesTab = course.type_name === 'MOOC' || course.type_name === '哔哩哔哩'
-    } else if (activeTab.value === 'campus') {
-      // 校内课程：过滤出校内老师上传的资源，且类型为人文类、海洋类、历史类、政治类
-      matchesTab = course.teacher !== null && 
-                   (course.type_name === '人文类' || course.type_name === '海洋类' || 
-                    course.type_name === '历史类' || course.type_name === '政治类')
-    } else if (activeTab.value === 'books') {
-      // 书籍资源：过滤出书籍类型的资源
-      matchesTab = course.type_name === '二手书' || course.type_name === '电子书'
+    if (currentCategory.value === 'online') {
+      // 网络课程：视频、MOOC 类型
+      matchesTab = course.type_name === '视频' || course.type_name === 'MOOC'
+    } else if (currentCategory.value === 'campus') {
+      // 校内课程：课件、作业类型
+      matchesTab = course.type_name === '课件' || course.type_name === '作业'
+    } else if (currentCategory.value === 'books') {
+      // 书籍资源：文档、电子书类型
+      matchesTab = course.type_name === '文档' || course.type_name === '电子书'
     }
     
     return matchesSearch && matchesType && matchesTab
@@ -120,6 +130,8 @@ const filteredCourses = computed(() => {
     result.sort((a, b) => b.downloads - a.downloads)
   } else if (sortBy.value === 'points') {
     result.sort((a, b) => a.points_required - b.points_required)
+  } else if (sortBy.value === 'newest') {
+    result.sort((a, b) => new Date(b.upload_date).getTime() - new Date(a.upload_date).getTime())
   }
   
   return result
@@ -141,6 +153,33 @@ const fetchCourses = async () => {
   } catch (error) {
     console.error('获取课程列表失败', error)
   }
+}
+
+const enterCategory = (category: string) => {
+  console.log('进入分类:', category)
+  currentCategory.value = category
+  showResourceList.value = true
+}
+
+const backToCategories = () => {
+  console.log('返回分类')
+  showResourceList.value = false
+}
+
+const getCategoryTitle = () => {
+  const titles: any = { online: '网络课程', campus: '校内课程', books: '书籍资源' }
+  return titles[currentCategory.value] || '资源列表'
+}
+
+const getCount = (category: string) => {
+  if (category === 'online') {
+    return courses.value.filter(c => c.type_name === '视频' || c.type_name === 'MOOC').length
+  } else if (category === 'campus') {
+    return courses.value.filter(c => c.type_name === '课件' || c.type_name === '作业').length
+  } else if (category === 'books') {
+    return courses.value.filter(c => c.type_name === '文档' || c.type_name === '电子书').length
+  }
+  return 0
 }
 
 const fetchCollections = async () => {
@@ -203,9 +242,9 @@ const downloadCourse = async (course: any) => {
 }
 
 const getPlaceholder = () => {
-  if (activeTab.value === 'online') {
+  if (currentCategory.value === 'online') {
     return '搜索网络课程...'
-  } else if (activeTab.value === 'campus') {
+  } else if (currentCategory.value === 'campus') {
     return '搜索校内课程...'
   } else {
     return '搜索书籍...'
@@ -248,4 +287,86 @@ onMounted(() => {
 .btn-download { background: #409eff; color: white; }
 
 .empty-state { text-align: center; padding: 60px 20px; color: #999; }
+
+/* 分类卡片入口样式 */
+.category-entrance {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 30px;
+  margin-top: 30px;
+}
+
+.category-card {
+  background: white;
+  padding: 40px 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: center;
+}
+
+.category-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+}
+
+.category-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
+.category-card h3 {
+  margin: 0 0 10px;
+  color: #333;
+  font-size: 20px;
+}
+
+.category-card p {
+  margin: 0 0 20px;
+  color: #666;
+  font-size: 14px;
+}
+
+.category-count {
+  display: inline-block;
+  padding: 6px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* 资源列表页面样式 */
+.resource-list-page {
+  margin-top: 20px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.btn-back {
+  padding: 8px 16px;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.btn-back:hover {
+  background: #e0e0e0;
+}
+
+.page-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 20px;
+}
 </style>

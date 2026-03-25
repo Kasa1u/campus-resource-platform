@@ -7,7 +7,8 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'role', 'name', 'email', 'student_id', 'employee_id',
-                  'gender', 'phone', 'signature', 'major', 'grade', 'subject', 'department', 'points']
+                  'gender', 'phone', 'signature', 'major', 'grade', 'subject', 'department', 
+                  'points', 'supervisor']
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
@@ -59,5 +60,16 @@ class LoginSerializer(serializers.Serializer):
 
         if user.role != data['role']:
             raise serializers.ValidationError(f'账号角色不正确，请使用{data["role"]}账号登录')
-
+        
         return user
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    """修改密码序列化器"""
+    old_password = serializers.CharField(required=True, write_only=True)
+    new_password = serializers.CharField(required=True, write_only=True, min_length=6)
+    
+    def validate_new_password(self, value):
+        if len(value) < 6:
+            raise serializers.ValidationError('新密码长度不能少于 6 位')
+        return value

@@ -69,12 +69,14 @@ const getVisibleText = (visible: string) => {
 const fetchPosts = async () => {
   try {
     const token = localStorage.getItem('token')
-    const response = await axios.get('http://127.0.0.1:8000/api/forum/', {
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
+    const response = await axios.get(`http://127.0.0.1:8000/api/forum/?role=${user.role}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     posts.value = response.data
   } catch (error) {
     console.error('获取帖子列表失败', error)
+    alert('获取帖子列表失败，请检查网络连接')
   }
 }
 
@@ -133,8 +135,12 @@ onMounted(() => {
 
 <style scoped>
 .page-container { padding: 20px; }
-.toolbar { margin-bottom: 20px; }
-.btn-refresh { padding: 8px 16px; background: #409eff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+.toolbar { margin-bottom: 20px; display: flex; gap: 10px; }
+.btn-add, .btn-refresh { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; }
+.btn-add { background: #67c23a; color: white; }
+.btn-add:hover { background: #85ce61; }
+.btn-refresh { background: #409eff; color: white; }
+.btn-refresh:hover { background: #66b1ff; }
 .data-table { width: 100%; background: white; border-collapse: collapse; border-radius: 8px; overflow: hidden; }
 .data-table th, .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
 .data-table th { background: #f5f7fa; font-weight: bold; }

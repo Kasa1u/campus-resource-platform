@@ -27,10 +27,14 @@ const router = createRouter({
         { path: 'announcements', name: 'AnnouncementManagement', component: () => import('../components/admin/AnnouncementManagement.vue') },
         { path: 'types', name: 'TypeManagement', component: () => import('../components/admin/TypeManagement.vue') },
         { path: 'analysis', name: 'DataAnalysis', component: () => import('../components/admin/DataAnalysis.vue') },
+        { path: 'user-overview', name: 'AdminUserOverview', component: () => import('../components/admin/UserOverview.vue') },
+        { path: 'resource-overview', name: 'AdminResourceOverview', component: () => import('../components/admin/ResourceOverview.vue') },
+        { path: 'forum-overview', name: 'AdminForumOverview', component: () => import('../components/admin/ForumOverview.vue') },
+        { path: 'pending-resources', name: 'AdminPendingResources', component: () => import('../components/admin/AdminCourseResourceManagement.vue') },
         { path: 'points', name: 'PointsManagement', component: () => import('../components/admin/PointsManagement.vue') },
         { path: 'system', name: 'SystemManagement', component: () => import('../components/admin/SystemManagement.vue') },
         { path: 'settings', name: 'SystemSettings', component: () => import('../components/admin/SystemSettings.vue') },
-        { path: '', redirect: '/admin/personal' }
+        { path: '', redirect: '/admin/analysis' }
       ]
     },
     {
@@ -39,7 +43,9 @@ const router = createRouter({
       component: StudentLayout,
       children: [
         { path: 'forum', name: 'StudentForum', component: () => import('../components/student/Forum.vue') },
+        { path: 'forum/:id', name: 'PostDetail', component: () => import('../components/student/PostDetail.vue') },
         { path: 'announcements', name: 'StudentAnnouncements', component: () => import('../components/student/Announcements.vue') },
+        { path: 'announcements/:id', name: 'AnnouncementDetail', component: () => import('../components/student/AnnouncementDetail.vue') },
         { path: 'courses', name: 'StudentCourses', component: () => import('../components/student/Courses.vue') },
         { path: 'personal', name: 'StudentPersonal', component: () => import('../components/student/PersonalCenter.vue') },
         { path: 'collections', name: 'CollectionManagement', component: () => import('../components/student/CollectionManagement.vue') },

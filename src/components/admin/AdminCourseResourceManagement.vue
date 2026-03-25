@@ -3,6 +3,32 @@
     <div class="page-header">
       <h2>资源管理</h2>
       <div class="header-actions">
+        <div class="category-tabs">
+          <button 
+            :class="['tab-btn', resourceCategory === 'all' ? 'active' : '']"
+            @click="resourceCategory = 'all'"
+          >
+            全部资源
+          </button>
+          <button 
+            :class="['tab-btn', resourceCategory === 'online' ? 'active' : '']"
+            @click="resourceCategory = 'online'"
+          >
+            🌐 网络课程
+          </button>
+          <button 
+            :class="['tab-btn', resourceCategory === 'campus' ? 'active' : '']"
+            @click="resourceCategory = 'campus'"
+          >
+            🏫 校内课程
+          </button>
+          <button 
+            :class="['tab-btn', resourceCategory === 'books' ? 'active' : '']"
+            @click="resourceCategory = 'books'"
+          >
+            📚 书籍资源
+          </button>
+        </div>
         <input v-model="searchText" placeholder="搜索资源名称..." class="search-input" />
         <select v-model="filterStatus" class="filter-select">
           <option value="">全部状态</option>
@@ -100,6 +126,7 @@ import axios from 'axios'
 const resources = ref<any[]>([])
 const searchText = ref('')
 const filterStatus = ref('')
+const resourceCategory = ref('all')
 const showDetailDialog = ref(false)
 const detailResource = ref<any>({})
 
@@ -107,7 +134,18 @@ const filteredResources = computed(() => {
   return resources.value.filter(r => {
     const matchSearch = r.title?.toLowerCase().includes(searchText.value.toLowerCase())
     const matchStatus = !filterStatus.value || r.status === filterStatus.value
-    return matchSearch && matchStatus
+    
+    // 按分类过滤
+    let matchCategory = true
+    if (resourceCategory.value === 'online') {
+      matchCategory = r.type_name === '视频' || r.type_name === 'MOOC'
+    } else if (resourceCategory.value === 'campus') {
+      matchCategory = r.type_name === '课件' || r.type_name === '作业'
+    } else if (resourceCategory.value === 'books') {
+      matchCategory = r.type_name === '文档' || r.type_name === '电子书'
+    }
+    
+    return matchSearch && matchStatus && matchCategory
   })
 })
 
@@ -192,7 +230,11 @@ onMounted(fetchResources)
 .page-container { padding: 24px; }
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
 .page-header h2 { margin: 0; font-size: 22px; color: #1a1a2e; }
-.header-actions { display: flex; gap: 12px; align-items: center; }
+.header-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.category-tabs { display: flex; gap: 8px; margin-bottom: 15px; }
+.tab-btn { padding: 8px 16px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; transition: all 0.3s; }
+.tab-btn:hover { background: #f5f5f5; }
+.tab-btn.active { background: #409eff; color: white; border-color: #409eff; }
 .search-input {
   padding: 9px 16px; border: 1px solid #dcdfe6; border-radius: 8px;
   font-size: 14px; width: 200px; outline: none;

@@ -5,12 +5,12 @@
       <button @click="showPostDialog = true" class="btn-add">发帖</button>
     </div>
     <div class="post-list">
-      <div v-for="post in posts" :key="post.id" class="post-item">
+      <div v-for="post in posts" :key="post.id" class="post-item" @click="viewPost(post)">
         <h3>{{ post.title }}</h3>
-        <p>{{ post.content }}</p>
+        <p>{{ post.content.substring(0, 100) }}{{ post.content.length > 100 ? '...' : '' }}</p>
         <div class="post-info">
-          <span>作者: {{ post.author?.name || post.author?.username }}</span>
-          <span>时间: {{ post.post_date }}</span>
+          <span>作者：{{ post.author?.name || post.author?.username }}</span>
+          <span>时间：{{ formatTime(post.post_date) }}</span>
           <span class="visible-tag">{{ getVisibleText(post.visible_to) }}</span>
         </div>
       </div>
@@ -40,14 +40,22 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+import { formatTime } from '../../utils/timeFormat'
+import { useRouter } from 'vue-router'
 
 const posts = ref<any[]>([])
 const showPostDialog = ref(false)
 const newPost = ref({ title: '', content: '', visible_to: 'all' })
 
+const router = useRouter()
+
 const getVisibleText = (visible: string) => {
   const map: any = { all: '公开', student: '学生', teacher: '老师' }
   return map[visible] || visible
+}
+
+const viewPost = (post: any) => {
+  router.push(`/student/forum/${post.id}`)
 }
 
 const fetchPosts = async () => {

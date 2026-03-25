@@ -26,6 +26,9 @@ class User(AbstractUser):
     subject = models.CharField(max_length=50, blank=True, verbose_name='学科')
     department = models.CharField(max_length=50, blank=True, verbose_name='部门')
     points = models.IntegerField(default=0)
+    supervisor = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, 
+                                   limit_choices_to={'role': 'teacher'},
+                                   verbose_name='指导老师', related_name='students')
 
     class Meta:
         ordering = ['username']

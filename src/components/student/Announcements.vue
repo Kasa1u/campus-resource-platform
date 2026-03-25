@@ -2,12 +2,17 @@
   <div class="page-container">
     <h2>公告</h2>
     <div class="announcement-list">
-      <div v-for="ann in announcements" :key="ann.id" class="announcement-item">
+      <div 
+        v-for="ann in announcements" 
+        :key="ann.id" 
+        class="announcement-item"
+        @click="viewAnnouncement(ann)"
+      >
         <h3>{{ ann.title }}</h3>
-        <p>{{ ann.content }}</p>
+        <p>{{ ann.content.substring(0, 100) }}{{ ann.content.length > 100 ? '...' : '' }}</p>
         <div class="announcement-info">
-          <span>发布者: {{ ann.author?.name || ann.author?.username }}</span>
-          <span>时间: {{ ann.publish_date }}</span>
+          <span>发布者：{{ ann.author?.name || ann.author?.username }}</span>
+          <span>时间：{{ ann.publish_date }}</span>
           <span class="visible-tag">{{ getVisibleText(ann.visible_to) }}</span>
         </div>
       </div>
@@ -20,13 +25,19 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import axios from 'axios'
 
+const router = useRouter()
 const announcements = ref<any[]>([])
 
 const getVisibleText = (visible: string) => {
   const map: any = { all: '公开', student: '学生', teacher: '老师' }
   return map[visible] || visible
+}
+
+const viewAnnouncement = (ann: any) => {
+  router.push(`/student/announcements/${ann.id}`)
 }
 
 const fetchAnnouncements = async () => {

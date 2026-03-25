@@ -69,12 +69,14 @@ const getVisibleText = (visible: string) => {
 const fetchAnnouncements = async () => {
   try {
     const token = localStorage.getItem('token')
-    const response = await axios.get('http://127.0.0.1:8000/api/announcements/', {
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
+    const response = await axios.get(`http://127.0.0.1:8000/api/announcements/?role=${user.role}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     announcements.value = response.data
   } catch (error) {
     console.error('获取公告列表失败', error)
+    alert('获取公告列表失败，请检查网络连接')
   }
 }
 

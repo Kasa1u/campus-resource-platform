@@ -1,8 +1,10 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.views import APIView
+from django.contrib.auth import authenticate
 from .models import User
-from .users_serializers import UserSerializer, UserUpdateSerializer, RegisterSerializer, LoginSerializer
+from .users_serializers import UserSerializer, UserUpdateSerializer, RegisterSerializer, LoginSerializer, ChangePasswordSerializer
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -60,3 +62,25 @@ class UserUpdateView(generics.UpdateAPIView):
     queryset = User.objects.all()
     serializer_class = UserUpdateSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+class ChangePasswordView(APIView):
+    """修改密码视图"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            # 获取当前用户
+            user = request.user
+            
+            # 验证旧密码
+            if not user.check_password(serializer.validated_data['old_password']):
+                return Response({'error': '旧密码不正确'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # 设置新密码
+            user.set_password(serializer.validated_data['new_password'])
+            user.save()
+            
+            return Response({'message': '密码修改成功'}, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

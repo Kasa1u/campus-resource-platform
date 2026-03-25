@@ -11,9 +11,14 @@
         <h3>{{ user?.name || '未设置' }}</h3>
         <p class="role-tag">老师</p>
         <p class="points">积分: {{ user?.points || 0 }}</p>
-        <button @click="isEditing = !isEditing" class="btn-edit-profile">
-          {{ isEditing ? '取消' : '修改资料' }}
-        </button>
+        <div class="action-buttons">
+          <button @click="isEditing = !isEditing" class="btn-edit-profile">
+            {{ isEditing ? '取消' : '修改资料' }}
+          </button>
+          <button @click="showPasswordModal = true" class="btn-change-password">
+            🔑 修改密码
+          </button>
+        </div>
       </div>
       
       <div class="info-section">
@@ -111,6 +116,51 @@
         </div>
       </div>
     </div>
+
+    <!-- 修改密码弹窗 -->
+    <div v-if="showPasswordModal" class="modal-overlay" @click="closePasswordModal">
+      <div class="password-modal" @click.stop>
+        <div class="modal-header">
+          <h3>🔑 修改密码</h3>
+          <button @click="closePasswordModal" class="close-btn">✕</button>
+        </div>
+        <form @submit.prevent="handleChangePassword" class="password-form">
+          <div class="form-group">
+            <label>当前密码</label>
+            <input 
+              v-model="passwordForm.old_password" 
+              type="password" 
+              placeholder="请输入当前密码" 
+              required 
+            />
+          </div>
+          <div class="form-group">
+            <label>新密码</label>
+            <input 
+              v-model="passwordForm.new_password" 
+              type="password" 
+              placeholder="请输入新密码（至少 6 位）" 
+              required 
+            />
+          </div>
+          <div class="form-group">
+            <label>确认新密码</label>
+            <input 
+              v-model="passwordForm.confirm_password" 
+              type="password" 
+              placeholder="请再次输入新密码" 
+              required 
+            />
+          </div>
+          <div class="form-actions">
+            <button type="button" @click="closePasswordModal" class="btn-cancel">取消</button>
+            <button type="submit" class="btn-submit" :disabled="passwordLoading">
+              {{ passwordLoading ? '修改中...' : '确认修改' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -120,6 +170,8 @@ import axios from 'axios'
 
 const user = ref<any>(null)
 const isEditing = ref(false)
+const showPasswordModal = ref(false)
+const passwordLoading = ref(false)
 const formData = ref({
   username: '',
   name: '',
@@ -130,6 +182,11 @@ const formData = ref({
   subject: '',
   department: '',
   signature: ''
+})
+const passwordForm = ref({
+  old_password: '',
+  new_password: '',
+  confirm_password: ''
 })
 const fileInput = ref<HTMLInputElement>()
 const defaultAvatar = 'https://via.placeholder.com/150'
@@ -167,6 +224,53 @@ const saveProfile = async () => {
   }
 }
 
+const closePasswordModal = () => {
+  showPasswordModal.value = false
+  passwordForm.value = {
+    old_password: '',
+    new_password: '',
+    confirm_password: ''
+  }
+}
+
+const handleChangePassword = async () => {
+  // 验证新密码
+  if (passwordForm.value.new_password.length < 6) {
+    alert('新密码长度不能少于 6 位')
+    return
+  }
+  
+  if (passwordForm.value.new_password !== passwordForm.value.confirm_password) {
+    alert('两次输入的新密码不一致')
+    return
+  }
+  
+  passwordLoading.value = true
+  
+  try {
+    const token = localStorage.getItem('token')
+    await axios.post('http://127.0.0.1:8000/api/auth/change-password/', {
+      old_password: passwordForm.value.old_password,
+      new_password: passwordForm.value.new_password
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    
+    alert('密码修改成功，请重新登录')
+    closePasswordModal()
+    
+    // 退出登录
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    window.location.href = '/login'
+  } catch (error: any) {
+    const message = error.response?.data?.error || '密码修改失败'
+    alert(message)
+  } finally {
+    passwordLoading.value = false
+  }
+}
+
 onMounted(() => {
   const userStr = localStorage.getItem('user')
   if (userStr) {
@@ -197,8 +301,11 @@ onMounted(() => {
 .avatar-section h3 { margin: 15px 0 5px; color: #333; }
 .role-tag { display: inline-block; background: #e6f7ff; color: #1890ff; padding: 2px 12px; border-radius: 12px; font-size: 12px; margin: 5px 0 10px; }
 .points { font-size: 16px; color: #faad14; margin: 0 0 15px; }
+.action-buttons { display: flex; gap: 10px; }
 .btn-edit-profile { padding: 8px 20px; background: #409eff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
 .btn-edit-profile:hover { background: #66b1ff; }
+.btn-change-password { padding: 8px 20px; background: #67c23a; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+.btn-change-password:hover { background: #85ce61; }
 .info-section { flex: 1; }
 .info-card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 .info-card h3 { margin: 0 0 20px; color: #333; border-bottom: 2px solid #409eff; padding-bottom: 10px; }
@@ -222,5 +329,129 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .personal-info { flex-direction: column; align-items: center; }
+}
+
+/* 修改密码弹窗样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.password-modal {
+  background: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 450px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #999;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s;
+}
+
+.close-btn:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.password-form {
+  padding: 20px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #666;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-size: 14px;
+}
+
+.form-group input:focus {
+  border-color: #409eff;
+  outline: none;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-cancel {
+  padding: 10px 24px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-cancel:hover {
+  background: #f5f5f5;
+}
+
+.btn-submit {
+  padding: 10px 24px;
+  background: #409eff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-submit:hover {
+  background: #66b1ff;
+}
+
+.btn-submit:disabled {
+  background: #c0c4cc;
+  cursor: not-allowed;
 }
 </style>

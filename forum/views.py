@@ -43,6 +43,9 @@ class PostDeleteView(generics.DestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        # 作者本人或管理员可以删除
+        if self.request.user.role == 'admin':
+            return ForumPost.objects.all()
         return ForumPost.objects.filter(author=self.request.user)
 
 class PostCommentView(generics.ListCreateAPIView):

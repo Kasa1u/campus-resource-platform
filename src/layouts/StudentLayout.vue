@@ -15,24 +15,38 @@
       </div>
 
       <nav class="sidebar-nav">
-        <router-link to="/student/forum">
-          <span class="nav-icon">💬</span>论坛
-        </router-link>
-        <router-link to="/student/announcements">
-          <span class="nav-icon">📢</span>公告
-        </router-link>
-        <router-link to="/student/courses">
-          <span class="nav-icon">📚</span>资源浏览
-        </router-link>
-        <router-link to="/student/collections">
-          <span class="nav-icon">⭐</span>收藏管理
-        </router-link>
-        <router-link to="/student/points">
-          <span class="nav-icon">🎁</span>我的积分
-        </router-link>
-        <router-link to="/student/personal">
-          <span class="nav-icon">👤</span>个人中心
-        </router-link>
+        <!-- 学习资源模块 -->
+        <div class="nav-group">
+          <div class="nav-group-title">学习资源</div>
+          <router-link to="/student/courses">
+            <span class="nav-icon">📚</span>资源浏览
+          </router-link>
+          <router-link to="/student/collections">
+            <span class="nav-icon">⭐</span>收藏管理
+          </router-link>
+        </div>
+        
+        <!-- 交流互动模块 -->
+        <div class="nav-group">
+          <div class="nav-group-title">交流互动</div>
+          <router-link to="/student/forum">
+            <span class="nav-icon">💬</span>论坛
+          </router-link>
+          <router-link to="/student/announcements">
+            <span class="nav-icon">📢</span>公告
+          </router-link>
+        </div>
+        
+        <!-- 个人管理模块 -->
+        <div class="nav-group">
+          <div class="nav-group-title">个人管理</div>
+          <router-link to="/student/points">
+            <span class="nav-icon">🎁</span>我的积分
+          </router-link>
+          <router-link to="/student/personal">
+            <span class="nav-icon">👤</span>个人中心
+          </router-link>
+        </div>
       </nav>
 
       <button @click="handleLogout" class="logout-btn">
@@ -69,7 +83,7 @@ const handleLogout = () => {
 
 .sidebar {
   width: 240px;
-  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  background: var(--student-bg);
   color: white;
   display: flex;
   flex-direction: column;
@@ -93,7 +107,9 @@ const handleLogout = () => {
   padding: 16px 20px;
   margin: 12px 12px 8px;
   background: rgba(255,255,255,0.07);
-  border-radius: 12px;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(10px);
 }
 .user-avatar {
   width: 38px; height: 38px;
@@ -110,43 +126,76 @@ const handleLogout = () => {
   padding: 8px 12px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 16px;
+  overflow-y: auto;
+  max-height: calc(100vh - 220px);
+}
+
+.nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-group-title {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0 16px 8px;
+  margin-top: 8px;
 }
 .sidebar-nav a {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 14px;
+  padding: 12px 16px;
   color: rgba(255,255,255,0.65);
   text-decoration: none;
-  border-radius: 10px;
-  font-size: 14px;
-  transition: all 0.2s;
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
 }
-.sidebar-nav a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.sidebar-nav a:hover {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  transform: translateX(4px);
+  box-shadow: var(--shadow-sm);
+}
 .sidebar-nav a.router-link-active {
-  background: linear-gradient(135deg, #409eff, #66b1ff);
+  background: linear-gradient(135deg, var(--student-primary), var(--primary-light));
   color: white;
-  box-shadow: 0 4px 12px rgba(64,158,255,0.35);
+  box-shadow: var(--shadow-md);
+  transform: translateX(4px);
 }
 .nav-icon { font-size: 16px; width: 20px; text-align: center; }
 
 .logout-btn {
   margin: 12px;
-  padding: 11px 16px;
+  padding: 12px 16px;
   background: rgba(245,108,108,0.15);
   color: #f56c6c;
   border: 1px solid rgba(245,108,108,0.25);
-  border-radius: 10px;
+  border-radius: var(--border-radius-md);
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: all 0.2s;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-sm);
 }
-.logout-btn:hover { background: rgba(245,108,108,0.25); }
+.logout-btn:hover {
+  background: rgba(245,108,108,0.25);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
 
 .content { flex: 1; background: #f4f6fb; overflow-y: auto; min-width: 0; }
 </style>

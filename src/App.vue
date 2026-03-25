@@ -1,5 +1,7 @@
 <template>
-  <router-view />
+  <transition name="fade" mode="out-in">
+    <router-view />
+  </transition>
 </template>
 
 <script setup lang="ts">
@@ -18,5 +20,16 @@ body {
 
 #app {
   min-height: 100vh;
+}
+
+/* 页面切换过渡动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--transition-normal);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
