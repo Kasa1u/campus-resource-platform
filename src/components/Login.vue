@@ -120,7 +120,7 @@
               <span class="checkmark"></span>
               <span>记住我</span>
             </label>
-            <a href="#" class="forgot-link">忘记密码?</a>
+            <a href="#" class="forgot-link" @click.prevent="showForgotDialog = true">忘记密码?</a>
           </div>
 
           <button type="submit" class="btn-login-gradient" :disabled="loading">
@@ -154,11 +154,57 @@
         <div class="deco-dots"></div>
       </div>
     </div>
+
+    <!-- 忘记密码弹窗 -->
+    <div v-if="showForgotDialog" class="dialog-overlay" @click="showForgotDialog = false">
+      <div class="dialog-content" @click.stop>
+        <div class="dialog-header">
+          <h3>修改密码</h3>
+          <button class="btn-close" @click="showForgotDialog = false">
+            <IconClose class="close-icon" />
+          </button>
+        </div>
+        <div class="dialog-body">
+          <div class="input-wrapper">
+            <label class="input-label">用户名</label>
+            <div class="input-group">
+              <IconUser class="input-icon-svg" />
+              <input v-model="forgotForm.username" placeholder="请输入用户名" required />
+            </div>
+          </div>
+          <div class="input-wrapper">
+            <label class="input-label">旧密码</label>
+            <div class="input-group">
+              <IconLock class="input-icon-svg" />
+              <input type="password" v-model="forgotForm.oldPassword" placeholder="请输入旧密码" required />
+            </div>
+          </div>
+          <div class="input-wrapper">
+            <label class="input-label">新密码</label>
+            <div class="input-group">
+              <IconLock class="input-icon-svg" />
+              <input type="password" v-model="forgotForm.newPassword" placeholder="请输入新密码（至少6位）" required />
+            </div>
+          </div>
+          <div class="input-wrapper">
+            <label class="input-label">确认新密码</label>
+            <div class="input-group">
+              <IconLock class="input-icon-svg" />
+              <input type="password" v-model="forgotForm.confirmPassword" placeholder="请再次输入新密码" required />
+            </div>
+          </div>
+          <button @click="handleChangePassword" class="btn-submit" :disabled="changingPassword">
+            <span v-if="!changingPassword">确认修改</span>
+            <span v-else class="loading-text">修改中...</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import {
@@ -186,6 +232,29 @@ const showPassword = ref(false)
 const loading = ref(false)
 const rememberMe = ref(false)
 const activeInput = ref('')
+
+// 忘记密码弹窗
+const showForgotDialog = ref(false)
+const changingPassword = ref(false)
+const forgotForm = ref({
+  username: '',
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
+// 页面加载时检查是否有保存的登录信息
+onMounted(() => {
+  const savedUsername = localStorage.getItem('remember_username')
+  const savedRole = localStorage.getItem('remember_role') as RoleType
+  if (savedUsername) {
+    username.value = savedUsername
+    rememberMe.value = true
+    if (savedRole) {
+      role.value = savedRole
+    }
+  }
+})
 
 const features = [
   { icon: IconCollection, title: '海量资源', desc: '10,000+ 优质课程' },
@@ -229,7 +298,62 @@ const handleSubmit = async () => {
     localStorage.setItem('token', res.data.access)
     localStorage.setItem('user', JSON.stringify(res.data.user))
 
-    const r = res.data.user.role
+    // 处理记住我功能
+    if (rememberMe.value) {
+      localStorage.setItem('remember_username', username.value)
+      localStorage.setItem('remember_role', role.value)
+    } else {
+      localStorage.removeItem('remember_username')
+      localStorage.removeItem('remember_role')
+  }
+
+  const handleChangePassword = async () => {
+    // 表单验证
+    if (!forgotForm.value.username || !forgotForm.value.oldPassword || !forgotForm.value.newPassword) {
+      alert('请填写所有必填项')
+      return
+    }
+    if (forgotForm.value.newPassword.length < 6) {
+      alert('新密码至少需要6位')
+      return
+    }
+    if (forgotForm.value.newPassword !== forgotForm.value.confirmPassword) {
+      alert('两次输入的新密码不一致')
+      return
+    }
+
+    changingPassword.value = true
+    try {
+      // 先登录获取token
+      const loginRes = await axios.post('http://127.0.0.1:8000/api/auth/login/', {
+        username: forgotForm.value.username,
+        password: forgotForm.value.oldPassword
+      })
+      
+      const token = loginRes.data.access
+      
+      // 调用修改密码API
+      await axios.post('http://127.0.0.1:8000/api/auth/change-password/', {
+        old_password: forgotForm.value.oldPassword,
+        new_password: forgotForm.value.newPassword
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      
+      alert('密码修改成功！请使用新密码登录')
+      showForgotDialog.value = false
+      // 清空表单
+      forgotForm.value = { username: '', oldPassword: '', newPassword: '', confirmPassword: '' }
+    } catch (error: any) {
+      console.error('修改密码失败:', error)
+      const msg = error.response?.data?.error || error.response?.data?.detail || '修改失败，请检查用户名和密码是否正确'
+      alert(msg)
+    } finally {
+      changingPassword.value = false
+    }
+  }
+
+  const r = res.data.user.role
     if (r === 'admin') router.push('/admin')
     else if (r === 'teacher') router.push('/teacher/courses')
     else router.push('/student')
@@ -1079,5 +1203,111 @@ const handleSubmit = async () => {
   .account-chip {
     justify-content: center;
   }
+}
+
+/* 忘记密码弹窗样式 */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fade-in 0.3s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.dialog-content {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slide-up 0.3s ease;
+}
+
+@keyframes slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dialog-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: #9ca3af;
+  transition: color 0.2s;
+}
+
+.btn-close:hover {
+  color: #374151;
+}
+
+.close-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.dialog-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.btn-submit {
+  padding: 14px;
+  background: linear-gradient(135deg, #0d9488, #14b8a6);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 8px;
+}
+
+.btn-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(13, 148, 136, 0.3);
+}
+
+.btn-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.loading-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 </style>
