@@ -289,15 +289,21 @@ const fetchCourses = async () => {
   try {
     const token = localStorage.getItem('token')
     
-    // 获取所有已审核通过的课程
+    // 获取所有课程（不过滤状态，让后端处理）
     const response = await axios.get('http://127.0.0.1:8000/api/courses/', {
       headers: { Authorization: `Bearer ${token}` }
     })
     
-    // 只显示状态为 active 或 approved 的资源
+    console.log('获取到的所有资源:', response.data)
+    console.log('资源状态分布:', response.data.map((c: any) => ({ title: c.title, status: c.status, uploader: c.uploader?.username })))
+    
+    // 显示所有非拒绝状态的资源（pending、approved、active 都显示）
     courses.value = response.data.filter((course: any) => {
-      return course.status === 'active' || course.status === 'approved'
+      // 排除已拒绝的资源，其他都显示
+      return course.status !== 'rejected'
     })
+    
+    console.log('过滤后显示的资源:', courses.value)
   } catch (error) {
     console.error('获取课程列表失败', error)
   } finally {
