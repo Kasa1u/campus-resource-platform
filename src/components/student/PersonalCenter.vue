@@ -4,29 +4,37 @@
     
     <!-- 个人统计卡片 -->
     <div class="stats-section">
-      <div class="stat-card">
-        <div class="stat-icon">🎓</div>
+      <div class="stat-card" @click="goToPoints">
+        <div class="stat-icon">
+          <IconStar class="stat-icon-svg" />
+        </div>
         <div class="stat-content">
           <div class="stat-value">{{ user?.points || 0 }}</div>
           <div class="stat-label">我的积分</div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon">📚</div>
+        <div class="stat-icon">
+          <IconBookOpen class="stat-icon-svg" />
+        </div>
         <div class="stat-content">
           <div class="stat-value">{{ user?.resource_count || 0 }}</div>
           <div class="stat-label">上传资源</div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon">💬</div>
+        <div class="stat-icon">
+          <IconMessageCircle class="stat-icon-svg" />
+        </div>
         <div class="stat-content">
           <div class="stat-value">{{ user?.post_count || 0 }}</div>
           <div class="stat-label">发布帖子</div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon">⭐</div>
+        <div class="stat-icon">
+          <IconStar class="stat-icon-svg" />
+        </div>
         <div class="stat-content">
           <div class="stat-value">{{ user?.collection_count || 0 }}</div>
           <div class="stat-label">收藏资源</div>
@@ -46,10 +54,12 @@
         <p class="student-id">{{ user?.student_id || '未设置' }}</p>
         <div class="action-buttons">
           <button @click="isEditing = !isEditing" class="btn-edit-profile">
+            <IconEdit class="btn-icon-svg" />
             {{ isEditing ? '取消' : '修改资料' }}
           </button>
           <button @click="showPasswordModal = true" class="btn-change-password">
-            🔑 修改密码
+            <IconLock class="btn-icon-svg" />
+            修改密码
           </button>
         </div>
       </div>
@@ -158,8 +168,10 @@
     <div v-if="showPasswordModal" class="modal-overlay" @click="closePasswordModal">
       <div class="password-modal" @click.stop>
         <div class="modal-header">
-          <h3>🔑 修改密码</h3>
-          <button @click="closePasswordModal" class="close-btn">✕</button>
+          <h3><IconLock class="modal-icon-svg" /> 修改密码</h3>
+          <button @click="closePasswordModal" class="close-btn">
+            <IconClose class="close-icon-svg" />
+          </button>
         </div>
         <form @submit.prevent="handleChangePassword" class="password-form">
           <div class="form-group">
@@ -202,8 +214,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { IconGraduationCap, IconBookOpen, IconMessageCircle, IconStar, IconLock, IconUser, IconCalendar, IconEdit, IconClose } from '@/components/icons'
 
 const user = ref<any>(null)
 const isEditing = ref(false)
@@ -227,6 +241,11 @@ const passwordForm = ref({
 })
 const fileInput = ref<HTMLInputElement>()
 const defaultAvatar = 'https://via.placeholder.com/150'
+const router = useRouter()
+
+const goToPoints = () => {
+  router.push('/student/points')
+}
 
 const getGenderText = (gender: string) => {
   const map: any = { male: '男', female: '女', other: '其他' }
@@ -368,7 +387,6 @@ onMounted(() => {
 }
 
 .stat-icon {
-  font-size: 48px;
   width: 60px;
   height: 60px;
   display: flex;
@@ -377,6 +395,19 @@ onMounted(() => {
   background: var(--color-primary-light);
   border-radius: var(--border-radius-full);
   flex-shrink: 0;
+}
+.stat-icon-svg {
+  width: 28px;
+  height: 28px;
+  color: var(--color-primary);
+}
+.stat-card {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--box-shadow-md);
 }
 
 .stat-content {
@@ -490,6 +521,14 @@ onMounted(() => {
   width: 100%;
   box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-icon-svg {
+  width: 18px;
+  height: 18px;
 }
 
 .btn-edit-profile:hover {
@@ -512,6 +551,10 @@ onMounted(() => {
   width: 100%;
   box-shadow: 0 4px 12px rgba(103, 194, 58, 0.3);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .btn-change-password:hover {
@@ -768,6 +811,18 @@ onMounted(() => {
   font-weight: 600;
   border-bottom: none;
   padding-bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.modal-icon-svg {
+  width: 20px;
+  height: 20px;
+  color: var(--color-primary);
+}
+.close-icon-svg {
+  width: 18px;
+  height: 18px;
 }
 
 .close-btn {

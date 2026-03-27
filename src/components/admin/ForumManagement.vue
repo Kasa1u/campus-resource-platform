@@ -31,7 +31,7 @@
           <td>{{ post.title }}</td>
           <td>{{ post.author?.username }}</td>
           <td><span class="visible-tag">{{ getVisibleText(post.visible_to) }}</span></td>
-          <td>{{ post.post_date }}</td>
+          <td>{{ formatTime(post.post_date) }}</td>
           <td class="actions">
             <button @click="editPost(post)" class="btn-edit">
               <IconEdit class="action-icon-svg" />
@@ -71,6 +71,7 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { IconMessageCircle, IconPlus, IconRefresh, IconEdit, IconDelete } from '@/components/icons'
+import { formatTime } from '../../utils/timeFormat'
 
 const posts = ref<any[]>([])
 const showAddDialog = ref(false)

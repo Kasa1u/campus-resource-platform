@@ -31,7 +31,7 @@
           <td>{{ ann.title }}</td>
           <td>{{ ann.author?.username }}</td>
           <td><span class="visible-tag">{{ getVisibleText(ann.visible_to) }}</span></td>
-          <td>{{ ann.publish_date }}</td>
+          <td>{{ formatTime(ann.publish_date) }}</td>
           <td class="actions">
             <button @click="editAnnouncement(ann)" class="btn-edit">
               <IconEdit class="action-icon-svg" />
@@ -71,6 +71,7 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { IconBell, IconPlus, IconRefresh, IconEdit, IconDelete } from '@/components/icons'
+import { formatTime } from '../../utils/timeFormat'
 
 const announcements = ref<any[]>([])
 const showAddDialog = ref(false)

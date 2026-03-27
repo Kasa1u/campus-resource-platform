@@ -62,7 +62,8 @@ import {
   IconSettings,
   IconAnnouncement,
   IconForum,
-  IconLogout 
+  IconLogout,
+  IconStar
 } from '../components/icons'
 
 const router = useRouter()

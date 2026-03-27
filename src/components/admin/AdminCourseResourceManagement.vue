@@ -14,19 +14,19 @@
             :class="['tab-btn', resourceCategory === 'online' ? 'active' : '']"
             @click="resourceCategory = 'online'"
           >
-            🌐 网络课程
+            <IconGlobe class="tab-icon" /> 网络课程
           </button>
           <button 
             :class="['tab-btn', resourceCategory === 'campus' ? 'active' : '']"
             @click="resourceCategory = 'campus'"
           >
-            🏫 校内课程
+            <IconHome class="tab-icon" /> 校内课程
           </button>
           <button 
             :class="['tab-btn', resourceCategory === 'books' ? 'active' : '']"
             @click="resourceCategory = 'books'"
           >
-            📚 书籍资源
+            <IconBook class="tab-icon" /> 书籍资源
           </button>
         </div>
         <input v-model="searchText" placeholder="搜索资源名称..." class="search-input" />
@@ -122,6 +122,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
+import { IconGlobe, IconHome, IconBook } from '@/components/icons'
 
 const resources = ref<any[]>([])
 const searchText = ref('')
@@ -232,9 +233,10 @@ onMounted(fetchResources)
 .page-header h2 { margin: 0; font-size: 22px; color: #1a1a2e; }
 .header-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .category-tabs { display: flex; gap: 8px; margin-bottom: 15px; }
-.tab-btn { padding: 8px 16px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; transition: all 0.3s; }
+.tab-btn { padding: 8px 16px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 6px; font-size: 14px; }
 .tab-btn:hover { background: #f5f5f5; }
 .tab-btn.active { background: #409eff; color: white; border-color: #409eff; }
+.tab-icon { width: 16px; height: 16px; }
 .search-input {
   padding: 9px 16px; border: 1px solid #dcdfe6; border-radius: 8px;
   font-size: 14px; width: 200px; outline: none;
