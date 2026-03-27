@@ -12,51 +12,74 @@
     </div>
     
     <div class="post-list">
-      <div v-for="post in posts" :key="post.id" class="post-item" @click="viewPost(post)">
-        <div class="post-avatar">
-          <div class="avatar-circle">
-            {{ getAvatarInitials(post.author) }}
+      <!-- 加载状态 -->
+      <template v-if="loading">
+        <div v-for="i in 5" :key="i" class="post-item skeleton">
+          <div class="post-avatar">
+            <div class="avatar-circle skeleton-avatar"></div>
+          </div>
+          <div class="post-content">
+            <div class="skeleton-line title"></div>
+            <div class="skeleton-line content"></div>
+            <div class="skeleton-line footer"></div>
           </div>
         </div>
-        
-        <div class="post-content">
-          <div class="post-header">
-            <h3 class="post-title">
-              <span v-if="isHotPost(post)" class="hot-tag">
-                <IconFlame class="hot-icon" />
-                热门
-              </span>
-              {{ post.title }}
-            </h3>
-            <span class="visible-tag">{{ getVisibleText(post.visible_to) }}</span>
+      </template>
+      
+      <!-- 帖子列表 -->
+      <template v-else-if="posts.length > 0">
+        <div v-for="post in posts" :key="post.id" class="post-item" @click="viewPost(post)">
+          <div class="post-avatar">
+            <div class="avatar-circle">
+              {{ getAvatarInitials(post.author) }}
+            </div>
           </div>
           
-          <p class="post-excerpt">{{ post.content.substring(0, 120) }}{{ post.content.length > 120 ? '...' : '' }}</p>
-          
-          <div class="post-footer">
-            <div class="post-author">
-              <span class="author-name">{{ post.author?.name || post.author?.username }}</span>
-              <span class="post-time">{{ formatTime(post.post_date) }}</span>
+          <div class="post-content">
+            <div class="post-header">
+              <h3 class="post-title">
+                <span v-if="isHotPost(post)" class="hot-tag">
+                  <IconFlame class="hot-icon" />
+                  热门
+                </span>
+                {{ post.title }}
+              </h3>
+              <span class="visible-tag">{{ getVisibleText(post.visible_to) }}</span>
             </div>
             
-            <div class="post-stats">
-              <span class="stat-item" title="浏览量">
-                <IconEye class="stat-icon-svg" />
-                <span class="stat-value">{{ post.views || 0 }}</span>
-              </span>
-              <span class="stat-item" title="回复数">
-                <IconMessageCircle class="stat-icon-svg" />
-                <span class="stat-value">{{ post.replies || 0 }}</span>
-              </span>
+            <p class="post-excerpt">{{ post.content.substring(0, 120) }}{{ post.content.length > 120 ? '...' : '' }}</p>
+            
+            <div class="post-footer">
+              <div class="post-author">
+                <span class="author-name">{{ post.author?.name || post.author?.username }}</span>
+                <span class="post-time">{{ formatTime(post.post_date) }}</span>
+              </div>
+              
+              <div class="post-stats">
+                <span class="stat-item" title="浏览量">
+                  <IconEye class="stat-icon-svg" />
+                  <span class="stat-value">{{ post.views || 0 }}</span>
+                </span>
+                <span class="stat-item" title="回复数">
+                  <IconMessageCircle class="stat-icon-svg" />
+                  <span class="stat-value">{{ post.replies || 0 }}</span>
+                </span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </template>
       
-      <div v-if="posts.length === 0" class="empty-state">
-        <IconInbox class="empty-icon-svg" />
-        <p>暂无帖子，快来发布第一条帖子吧！</p>
-      </div>
+      <!-- 空状态 -->
+      <EmptyState
+        v-else
+        type="no-data"
+        title="暂无帖子"
+        description="快来发布第一条帖子，开启交流之旅吧！"
+        :show-action="true"
+        action-text="发布帖子"
+        @action="showPostDialog = true"
+      />
     </div>
 
     <div v-if="showPostDialog" class="dialog-overlay" @click="showPostDialog = false">
@@ -85,9 +108,11 @@ import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { formatTime } from '../../utils/timeFormat'
 import { useRouter } from 'vue-router'
-import { IconMessageCircle, IconEdit, IconFlame, IconEye, IconInbox } from '../../components/icons'
+import { IconMessageCircle, IconEdit, IconFlame, IconEye } from '../../components/icons'
+import EmptyState from '../common/EmptyState.vue'
 
 const posts = ref<any[]>([])
+const loading = ref(false)
 const showPostDialog = ref(false)
 const newPost = ref({ title: '', content: '', visible_to: 'all' })
 
@@ -122,12 +147,15 @@ const viewPost = (post: any) => {
 }
 
 const fetchPosts = async () => {
+  loading.value = true
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}')
     const response = await axios.get(`http://127.0.0.1:8000/api/forum/?role=${user.role}`)
     posts.value = response.data
   } catch (error) {
     console.error('获取帖子失败', error)
+  } finally {
+    loading.value = false
   }
 }
 
@@ -225,6 +253,63 @@ onMounted(() => {
   cursor: pointer;
   display: flex;
   gap: 16px;
+}
+
+/* 骨架屏样式 */
+.post-item.skeleton {
+  pointer-events: none;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-avatar {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-line {
+  height: 16px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-line.title {
+  height: 20px;
+  width: 70%;
+  margin-bottom: 12px;
+}
+
+.skeleton-line.content {
+  height: 16px;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.skeleton-line.footer {
+  height: 14px;
+  width: 60%;
+  margin-bottom: 0;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 .post-item:hover {
