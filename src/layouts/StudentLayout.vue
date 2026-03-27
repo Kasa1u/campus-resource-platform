@@ -27,10 +27,10 @@
       </nav>
       
       <div class="nav-actions">
-        <router-link to="/student/points" class="user-points-badge">
+        <div class="user-points-badge" @click="goToPoints">
           <IconStar class="points-icon" />
           <span>{{ userPoints }} 积分</span>
-        </router-link>
+        </div>
         <router-link to="/student/personal" class="user-avatar-link">
           <div class="user-avatar">{{ userInitial }}</div>
         </router-link>
@@ -68,6 +68,10 @@ const user = JSON.parse(localStorage.getItem('user') || '{}')
 const userName = computed(() => user.name || user.username || '同学')
 const userInitial = computed(() => (user.name || user.username || 'S').charAt(0).toUpperCase())
 const userPoints = computed(() => user.points || 0)
+
+const goToPoints = () => {
+  router.push('/student/points')
+}
 
 const handleLogout = () => {
   localStorage.removeItem('token')
