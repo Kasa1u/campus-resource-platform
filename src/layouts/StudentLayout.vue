@@ -27,6 +27,7 @@
       </nav>
       
       <div class="nav-actions">
+        <GlobalSearch />
         <div class="user-points-badge" @click="goToPoints">
           <IconStar class="points-icon" />
           <span>{{ userPoints }} 积分</span>
@@ -53,6 +54,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AIAssistantFloating from '../components/student/AIAssistantFloating.vue'
+import GlobalSearch from '../components/common/GlobalSearch.vue'
 import { 
   IconBook, 
   IconStar, 
