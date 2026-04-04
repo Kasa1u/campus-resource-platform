@@ -71,9 +71,9 @@
             <span>类型</span>
           </label>
           <select v-model="filterType" class="filter-select">
-            <option value="">全部类型</option>
-            <option v-for="t in courseTypes" :key="t.id" :value="t.id">{{ t.name }}</option>
-          </select>
+              <option value="">全部类型</option>
+              <option v-for="t in filteredCourseTypes" :key="t.id" :value="t.id">{{ t.name }}</option>
+            </select>
         </div>
 
         <div class="filter-group">
@@ -104,9 +104,9 @@
 
       <div class="resource-grid" v-else>
         <div v-for="course in filteredCourses" :key="course.id" class="resource-card">
-          <div class="resource-cover" :class="getCoverClass(course.type?.name)">
+          <div class="resource-cover" :class="getCoverClass(getTypeName(course))">
             <div class="cover-overlay"></div>
-            <component :is="getCoverIcon(course.type?.name)" class="cover-icon-svg" />
+            <component :is="getCoverIcon(getTypeName(course))" class="cover-icon-svg" />
             <div class="status-badge" :class="course.status">{{ getStatusText(course.status) }}</div>
           </div>
           <div class="resource-body">
@@ -114,7 +114,7 @@
             <div class="resource-meta">
               <div class="meta-tag">
                 <IconCollection class="meta-icon" />
-                <span>{{ course.type?.name || '未分类' }}</span>
+                <span>{{ getTypeName(course) || '未分类' }}</span>
               </div>
               <div class="meta-tag">
                 <IconDownload class="meta-icon" />
@@ -168,7 +168,7 @@
               <label>资源类型</label>
               <select v-model="currentCourse.type" required>
                 <option value="">请选择类型</option>
-                <option v-for="type in courseTypes" :key="type.id" :value="type.id">
+                <option v-for="type in filteredCourseTypes" :key="type.id" :value="type.id">
                   {{ type.name }}
                 </option>
               </select>
@@ -225,7 +225,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { formatTime } from '../../utils/timeFormat'
 import {
@@ -304,20 +304,42 @@ const getCoverIcon = (typeName: string) => {
   return iconMap[typeName] || IconFolder
 }
 
+const getTypeId = (course: any) => {
+  if (typeof course.type === 'object' && course.type !== null) {
+    return course.type.id
+  }
+  return course.type
+}
+
+const getTypeName = (course: any) => {
+  if (typeof course.type === 'object' && course.type !== null) {
+    return course.type.name
+  }
+  return course.type_name
+}
+
+const getTypeDescription = (course: any) => {
+  if (typeof course.type === 'object' && course.type !== null) {
+    return course.type.description
+  }
+  return course.type_description
+}
+
 const filteredCourses = computed(() => {
   let result = courses.value.filter(course => {
     const matchesSearch = searchText.value === '' ||
                          course.title.toLowerCase().includes(searchText.value.toLowerCase()) ||
                          (course.description && course.description.toLowerCase().includes(searchText.value.toLowerCase()))
-    const matchesType = filterType.value === '' || course.type === filterType.value
+    const courseTypeId = getTypeId(course)
+    const matchesType = filterType.value === '' || courseTypeId === filterType.value
 
     let matchesCategory = true
     if (resourceCategory.value === 'online') {
-      matchesCategory = course.type_name === '视频' || course.type_name === 'MOOC'
+      matchesCategory = getTypeDescription(course) === '网络资源'
     } else if (resourceCategory.value === 'campus') {
-      matchesCategory = course.type_name === '课件' || course.type_name === '作业'
+      matchesCategory = getTypeDescription(course) === '课程资源'
     } else if (resourceCategory.value === 'books') {
-      matchesCategory = course.type_name === '文档' || course.type_name === '电子书'
+      matchesCategory = getTypeDescription(course) === '书籍资源'
     }
 
     return matchesSearch && matchesType && matchesCategory
@@ -330,6 +352,21 @@ const filteredCourses = computed(() => {
   }
 
   return result
+})
+
+const getMainCategoryDescription = (cat: string) => {
+  if (cat === 'online') return '网络资源'
+  if (cat === 'campus') return '课程资源'
+  if (cat === 'books') return '书籍资源'
+  return ''
+}
+
+const filteredCourseTypes = computed(() => {
+  if (resourceCategory.value === 'all') {
+    return courseTypes.value
+  }
+  const description = getMainCategoryDescription(resourceCategory.value)
+  return courseTypes.value.filter(t => t.description === description)
 })
 
 const fetchCourses = async () => {
@@ -466,6 +503,17 @@ const deleteCourse = async (id: number) => {
     }
   }
 }
+
+watch(resourceCategory, () => {
+  filterType.value = ''
+  if (currentCourse.value.type) {
+    const currentType = courseTypes.value.find(t => t.id === currentCourse.value.type)
+    const desc = getMainCategoryDescription(resourceCategory.value)
+    if (currentType && currentType.description !== desc) {
+      currentCourse.value.type = ''
+    }
+  }
+})
 
 onMounted(() => {
   fetchCourses()
