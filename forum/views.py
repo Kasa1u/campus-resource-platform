@@ -11,10 +11,20 @@ class PostListView(generics.ListAPIView):
     def get_queryset(self):
         queryset = ForumPost.objects.filter(status='approved')
         user_role = self.request.query_params.get('role')
+        sort_by = self.request.query_params.get('sort_by', 'newest')
+        
         if user_role:
             queryset = queryset.filter(visible_to__in=['all', user_role])
         else:
             queryset = queryset.filter(visible_to='all')
+        
+        if sort_by == 'newest':
+            queryset = queryset.order_by('-post_date')
+        elif sort_by == 'oldest':
+            queryset = queryset.order_by('post_date')
+        elif sort_by == 'hot':
+            queryset = queryset.order_by('-views', '-post_date')
+        
         return queryset
 
 class PostCreateView(generics.CreateAPIView):

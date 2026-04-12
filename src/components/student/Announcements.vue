@@ -15,6 +15,21 @@
         <IconClose class="clear-icon" />
       </button>
     </div>
+    
+    <div class="sort-bar">
+      <div class="sort-label">
+        <IconSort class="sort-icon" />
+        <span>排序：</span>
+      </div>
+      <button 
+        v-for="option in sortOptions" 
+        :key="option.value"
+        @click="sortBy = option.value"
+        :class="['sort-btn', { active: sortBy === option.value }]"
+      >
+        {{ option.label }}
+      </button>
+    </div>
     <div class="announcement-list">
       <div 
         v-for="ann in filteredAnnouncements" 
@@ -39,16 +54,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { formatDateTime } from '../../utils/timeFormat'
-import { IconBell, IconUser, IconCalendar, IconInbox, IconSearch, IconClose } from '@/components/icons'
+import { IconBell, IconUser, IconCalendar, IconInbox, IconSearch, IconClose, IconSort } from '@/components/icons'
 
 const router = useRouter()
 const announcements = ref<any[]>([])
 const searchText = ref('')
 const loading = ref(true)
+const sortBy = ref('newest')
+const sortOptions = [
+  { label: '最新发布', value: 'newest' },
+  { label: '最早发布', value: 'oldest' }
+]
 
 const getVisibleText = (visible: string) => {
   const map: any = { all: '公开', student: '学生', teacher: '老师' }
@@ -81,7 +101,7 @@ const fetchAnnouncements = async () => {
   loading.value = true
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}')
-    const response = await axios.get(`http://127.0.0.1:8000/api/announcements/?role=${user.role}`)
+    const response = await axios.get(`http://127.0.0.1:8000/api/announcements/?role=${user.role}&sort_by=${sortBy.value}`)
     announcements.value = response.data
   } catch (error) {
     console.error('获取公告失败', error)
@@ -89,6 +109,10 @@ const fetchAnnouncements = async () => {
     loading.value = false
   }
 }
+
+watch(sortBy, () => {
+  fetchAnnouncements()
+})
 
 onMounted(() => {
   fetchAnnouncements()
@@ -153,6 +177,54 @@ onMounted(() => {
   width: 16px;
   height: 16px;
   color: var(--text-secondary);
+}
+
+.sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: var(--spacing-lg);
+  padding: 12px 16px;
+  background: var(--bg-primary);
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+}
+
+.sort-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.sort-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.sort-btn {
+  padding: 6px 14px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sort-btn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.sort-btn.active {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
 }
 
 .announcement-list { display: flex; flex-direction: column; gap: var(--spacing-md); }

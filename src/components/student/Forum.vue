@@ -23,6 +23,21 @@
       </button>
     </div>
     
+    <div class="sort-bar">
+      <div class="sort-label">
+        <IconSort class="sort-icon" />
+        <span>排序：</span>
+      </div>
+      <button 
+        v-for="option in sortOptions" 
+        :key="option.value"
+        @click="sortBy = option.value"
+        :class="['sort-btn', { active: sortBy === option.value }]"
+      >
+        {{ option.label }}
+      </button>
+    </div>
+    
     <div class="post-list">
       <!-- 加载状态 -->
       <template v-if="loading">
@@ -116,12 +131,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { formatTime } from '../../utils/timeFormat'
 import { useRouter } from 'vue-router'
 import { useToast } from '../../composables/useToast'
-import { IconMessageCircle, IconEdit, IconFlame, IconEye, IconSearch, IconClose } from '../../components/icons'
+import { IconMessageCircle, IconEdit, IconFlame, IconEye, IconSearch, IconClose, IconSort } from '../../components/icons'
 import EmptyState from '../common/EmptyState.vue'
 
 const toast = useToast()
@@ -130,6 +145,12 @@ const loading = ref(false)
 const showPostDialog = ref(false)
 const newPost = ref({ title: '', content: '', visible_to: 'all' })
 const searchText = ref('')
+const sortBy = ref('newest')
+const sortOptions = [
+  { label: '最新发布', value: 'newest' },
+  { label: '最早发布', value: 'oldest' },
+  { label: '热度最高', value: 'hot' }
+]
 
 const router = useRouter()
 
@@ -176,7 +197,7 @@ const fetchPosts = async () => {
   loading.value = true
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}')
-    const response = await axios.get(`http://127.0.0.1:8000/api/forum/?role=${user.role}`)
+    const response = await axios.get(`http://127.0.0.1:8000/api/forum/?role=${user.role}&sort_by=${sortBy.value}`)
     posts.value = response.data
   } catch (error) {
     console.error('获取帖子失败', error)
@@ -199,6 +220,10 @@ const createPost = async () => {
     toast.error('发布失败')
   }
 }
+
+watch(sortBy, () => {
+  fetchPosts()
+})
 
 onMounted(() => {
   fetchPosts()
@@ -296,6 +321,54 @@ onMounted(() => {
 .search-input::placeholder {
   color: var(--text-placeholder);
 }
+.sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 12px 16px;
+  background: var(--bg-primary);
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+}
+
+.sort-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.sort-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.sort-btn {
+  padding: 6px 14px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sort-btn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.sort-btn.active {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
 .clear-btn {
   display: flex;
   align-items: center;
