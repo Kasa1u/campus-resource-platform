@@ -138,9 +138,45 @@ def teacher_insight(request):
 
     content, error = call_doubao(messages, max_tokens=600)
     if error:
-        return Response({'insight': f'AI 分析暂时不可用：{error}', 'stats': course_stats})
+        fallback_insight = generate_fallback_insight(course_stats)
+        return Response({
+            'insight': fallback_insight,
+            'stats': course_stats
+        })
 
     return Response({
         'insight': content,
         'stats': course_stats
     })
+
+
+def generate_fallback_insight(stats):
+    """生成模拟的教学建议（当AI服务不可用时）"""
+    if not stats:
+        return '您目前还没有上传任何课程资源，快去上传第一份资源吧！上传后我会根据学生的反馈为您提供教学建议。'
+    
+    total_downloads = sum(c['downloads'] for c in stats)
+    total_comments = sum(c['comment_count'] for c in stats)
+    course_count = len(stats)
+    
+    insights = []
+    insights.append(f"📊 您目前共有 {course_count} 门课程，总计获得 {total_downloads} 次下载和 {total_comments} 条评论！")
+    
+    if total_downloads > 100:
+        insights.append("🎉 您的课程非常受欢迎！学生们都很喜欢您的教学资源。继续保持这种高质量的内容输出！")
+    elif total_downloads > 20:
+        insights.append("👍 您的课程正在稳步发展，建议可以多在班级群或平台上推广一下，让更多学生受益！")
+    else:
+        insights.append("💡 您的课程刚起步，建议可以完善一下课程描述和封面，或者在课堂上引导学生下载使用。")
+    
+    if total_comments > 10:
+        insights.append("💬 学生们的互动很活跃！建议您定期查看评论区，及时回应学生的疑问，这对提升教学效果很有帮助。")
+    elif total_comments > 0:
+        insights.append("💬 有一些学生评论了，建议您可以鼓励更多学生分享学习心得，形成良好的学习氛围。")
+    
+    insights.append("\n📝 具体建议：")
+    insights.append("1. 定期更新教学资源，保持内容的时效性")
+    insights.append("2. 主动与学生互动，收集反馈并改进教学")
+    insights.append("3. 可以录制一些简短的讲解视频，帮助学生理解难点")
+    
+    return "\n".join(insights)
