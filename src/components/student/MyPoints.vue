@@ -60,45 +60,81 @@
         </div>
       </div>
 
-      <div class="section-container">
-        <div class="section-header">
-          <h3 class="section-title">积分商城</h3>
-          <span class="subtitle-small">使用积分兑换以下奖品</span>
+      <div class="tabs-container">
+        <div class="tabs-header">
+          <button 
+            :class="['tab-btn', activeTab === 'prizes' ? 'active' : '']"
+            @click="activeTab = 'prizes'"
+          >
+            积分商城
+          </button>
+          <button 
+            :class="['tab-btn', activeTab === 'records' ? 'active' : '']"
+            @click="activeTab = 'records'; fetchPointRecords()"
+          >
+            积分流水
+          </button>
         </div>
-        
-        <div class="prizes-grid">
-          <div v-for="prize in prizes" :key="prize.id" class="prize-card card">
-            <div class="prize-image-wrapper">
-              <img v-if="prize.image_url" :src="prize.image_url" :alt="prize.name" class="prize-image" />
-              <div v-else class="prize-placeholder">
-                <IconGift class="placeholder-icon" />
-              </div>
-              <div class="stock-badge">库存: {{ prize.stock }}</div>
-            </div>
-            
-            <div class="prize-body">
-              <h4 class="prize-name">{{ prize.name }}</h4>
-              <p class="prize-desc">{{ prize.description || '暂无描述' }}</p>
-              
-              <div class="prize-footer">
-                <div class="prize-cost">
-                  <IconStar class="cost-icon" />
-                  <span>{{ prize.points_required }} 分</span>
+
+        <div v-if="activeTab === 'prizes'" class="tab-content">
+          <div class="prizes-grid">
+            <div v-for="prize in prizes" :key="prize.id" class="prize-card card">
+              <div class="prize-image-wrapper">
+                <img v-if="prize.image_url" :src="prize.image_url" :alt="prize.name" class="prize-image" />
+                <div v-else class="prize-placeholder">
+                  <IconGift class="placeholder-icon" />
                 </div>
-                <button 
-                  @click="exchangePrize(prize)" 
-                  class="btn btn-sm"
-                  :class="getBtnClass(prize)"
-                  :disabled="prize.stock <= 0 || userPoints < prize.points_required"
-                >
-                  {{ getBtnText(prize) }}
-                </button>
+                <div class="stock-badge">库存: {{ prize.stock }}</div>
               </div>
+              
+              <div class="prize-body">
+                <h4 class="prize-name">{{ prize.name }}</h4>
+                <p class="prize-desc">{{ prize.description || '暂无描述' }}</p>
+                
+                <div class="prize-footer">
+                  <div class="prize-cost">
+                    <IconStar class="cost-icon" />
+                    <span>{{ prize.points_required }} 分</span>
+                  </div>
+                  <button 
+                    @click="exchangePrize(prize)" 
+                    class="btn btn-sm"
+                    :class="getBtnClass(prize)"
+                    :disabled="prize.stock <= 0 || userPoints < prize.points_required"
+                  >
+                    {{ getBtnText(prize) }}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="prizes.length === 0" class="empty-state full-width card">
+              <p>管理员还没上架任何奖品哦，敬请期待！</p>
             </div>
           </div>
+        </div>
 
-          <div v-if="prizes.length === 0" class="empty-state full-width card">
-            <p>管理员还没上架任何奖品哦，敬请期待！</p>
+        <div v-if="activeTab === 'records'" class="tab-content">
+          <div class="records-card card">
+            <div v-for="record in pointRecords" :key="record.id" class="record-item">
+              <div class="record-left">
+                <div class="record-icon" :class="record.change_amount > 0 ? 'icon-add' : 'icon-deduct'">
+                  {{ record.change_amount > 0 ? '+' : '-' }}
+                </div>
+                <div class="record-info">
+                  <div class="record-type">{{ getChangeTypeText(record.change_type) }}</div>
+                  <div class="record-desc">{{ record.description || '-' }}</div>
+                  <div class="record-time">{{ formatTime(record.created_at) }}</div>
+                </div>
+              </div>
+              <div class="record-amount" :class="record.change_amount > 0 ? 'amount-add' : 'amount-deduct'">
+                {{ record.change_amount > 0 ? '+' : '' }}{{ record.change_amount }}
+              </div>
+            </div>
+
+            <div v-if="pointRecords.length === 0" class="empty-state">
+              <p>暂无积分流水记录</p>
+            </div>
           </div>
         </div>
       </div>
@@ -115,7 +151,9 @@
   const userPoints = ref(0)
   const hasSigned = ref(false)
   const prizes = ref<any[]>([])
+  const pointRecords = ref<any[]>([])
   const user = ref<any>(null)
+  const activeTab = ref('prizes')
 
   // 刷新用户信息以获取最新积分
   const fetchUserInfo = async () => {
@@ -203,6 +241,44 @@
     }
   }
 
+  // 获取积分流水
+  const fetchPointRecords = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const res = await axios.get('http://127.0.0.1:8000/api/points/', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      pointRecords.value = res.data
+    } catch (error) {
+      console.error('获取积分流水失败', error)
+    }
+  }
+
+  // 获取变动类型文本
+  const getChangeTypeText = (type: string) => {
+    const typeMap: Record<string, string> = {
+      'checkin': '每日签到',
+      'upload': '资源上传奖励',
+      'post': '论坛发帖奖励',
+      'exchange': '礼品兑换扣除',
+      'admin': '管理员操作'
+    }
+    return typeMap[type] || type
+  }
+
+  // 格式化时间
+  const formatTime = (time: string) => {
+    if (!time) return '-'
+    const date = new Date(time)
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
   onMounted(() => {
     const storedUser = localStorage.getItem('user')
     if (storedUser) {
@@ -281,8 +357,53 @@
   .fade-in { animation: fadeIn var(--transition-normal); }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
+  /* 标签页样式 */
+  .tabs-container { margin-top: 40px; }
+  .tabs-header { display: flex; gap: 0; border-bottom: 2px solid var(--border-light); margin-bottom: 24px; }
+  .tab-btn {
+    padding: 12px 28px; background: none; border: none; cursor: pointer;
+    font-size: 15px; font-weight: 500; color: var(--text-secondary);
+    transition: all 0.2s; position: relative;
+  }
+  .tab-btn:hover { color: var(--text-primary); }
+  .tab-btn.active {
+    color: var(--primary-color);
+  }
+  .tab-btn.active::after {
+    content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px; background: var(--primary-color);
+  }
+  .tab-content { animation: fadeIn var(--transition-normal); }
+
+  /* 积分流水样式 */
+  .records-card { padding: 12px 0; }
+  .record-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 24px; border-bottom: 1px solid var(--border-light);
+  }
+  .record-item:last-child { border-bottom: none; }
+  .record-left { display: flex; align-items: center; gap: 14px; }
+  .record-icon {
+    width: 40px; height: 40px; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; font-weight: 700; font-size: 18px;
+  }
+  .record-icon.icon-add { background: #d1fae5; color: #059669; }
+  .record-icon.icon-deduct { background: #fee2e2; color: #dc2626; }
+  .record-info { display: flex; flex-direction: column; gap: 2px; }
+  .record-type { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+  .record-desc { font-size: 13px; color: var(--text-secondary); }
+  .record-time { font-size: 12px; color: var(--text-tertiary); }
+  .record-amount { font-size: 18px; font-weight: 700; }
+  .record-amount.amount-add { color: #059669; }
+  .record-amount.amount-deduct { color: #dc2626; }
+
   @media (max-width: 768px) {
     .points-overview-card { flex-direction: column; gap: 20px; text-align: center; }
     .overview-left { flex-direction: column; }
+    .tabs-header { overflow-x: auto; }
+    .tab-btn { padding: 10px 20px; white-space: nowrap; }
+    .record-item { padding: 14px 16px; }
+    .record-icon { width: 36px; height: 36px; font-size: 16px; }
+    .record-type { font-size: 14px; }
+    .record-amount { font-size: 16px; }
   }
   </style>
