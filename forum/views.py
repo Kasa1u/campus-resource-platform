@@ -1,5 +1,6 @@
 from rest_framework import generics, permissions
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import ForumPost, ForumComment
 from .serializers import PostSerializer, PostCreateSerializer, CommentSerializer
 
@@ -62,7 +63,13 @@ class PostDeleteView(generics.DestroyAPIView):
 
 class PostCommentView(generics.ListCreateAPIView):
     serializer_class = CommentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            # 查看评论允许所有人访问
+            return [AllowAny()]
+        # 发布评论需要登录
+        return [IsAuthenticated()]
 
     def get_queryset(self):
         post_id = self.kwargs['pk']
