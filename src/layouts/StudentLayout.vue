@@ -3,7 +3,7 @@
     <header class="top-nav glass">
       <div class="nav-brand">
         <IconBook class="brand-icon" />
-        <span class="brand-name">校园资源共享平台</span>
+        <span class="brand-name">校园课程资源共享平台</span>
       </div>
       
       <nav class="nav-menu">
