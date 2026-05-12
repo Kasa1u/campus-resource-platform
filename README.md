@@ -82,13 +82,10 @@ pip install -r requirements.txt
 python manage.py makemigrations
 python manage.py migrate
 
-# 3. 初始化示例数据（可选）
-python init_sample_data.py
-
-# 4. 创建超级管理员
+# 3. 创建超级管理员
 python manage.py createsuperuser
 
-# 5. 启动开发服务器
+# 4. 启动开发服务器
 python manage.py runserver
 ```
 
@@ -138,15 +135,8 @@ SIMPLE_JWT = {
 }
 ```
 
-### 前端配置
-创建 `.env` 文件配置 API 地址：
-
-```env
-VITE_API_BASE=http://127.0.0.1:8000
-```
-
 ### AI 配置
-在 `.env` 文件中配置豆包 AI：
+在 `.env.production` 文件中配置豆包 AI：
 
 ```env
 DOUBAO_API_KEY=your_api_key
@@ -165,7 +155,7 @@ cd bishe_first
 ```bash
 pip install -r requirements.txt
 python manage.py migrate
-python init_sample_data.py
+python manage.py createsuperuser
 python manage.py runserver
 ```
 
@@ -182,7 +172,7 @@ npm run dev
 
 ## 👤 测试账号
 
-系统提供以下测试账号（通过 `init_sample_data.py` 初始化）：
+系统提供以下测试账号：
 
 | 角色 | 用户名 | 密码 | 说明 |
 |------|--------|------|------|
@@ -219,6 +209,7 @@ bishe_first/
 │   ├── styles/          # 样式文件
 │   ├── App.vue          # 根组件
 │   └── main.ts          # 入口文件
+├── public/              # 静态资源
 ├── manage.py            # Django 管理脚本
 ├── requirements.txt     # Python 依赖
 ├── package.json         # Node.js 依赖
@@ -229,7 +220,7 @@ bishe_first/
 └── README.md            # 项目说明
 ```
 
-详细的项目文件目录及作用请查看 [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md)。
+详细的项目文件目录及作用请查看 `项目文件分析报告.md`。
 
 ## 📝 开发说明
 
@@ -290,19 +281,12 @@ npm run build
 - **PointRecord**: 积分记录
 - **Prize**: 奖品
 - **PrizeExchange**: 奖品兑换记录
-
-## 🤝 贡献指南
-
-欢迎提交 Issue 和 Pull Request！
+- **CheckInRecord**: 签到记录
 
 ## 📄 许可证
 
 MIT License
 
-## 👨‍💻 作者
-
-毕业设计项目
-
 ---
 
-**更新时间**: 2026-04-08
+**更新时间**: 2026-05-13
